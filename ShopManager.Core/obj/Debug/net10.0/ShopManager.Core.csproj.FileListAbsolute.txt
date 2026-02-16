@@ -10,3 +10,4 @@ C:\Users\kybes\OneDrive\Desktop\KBShopApp\ShopManager.Core\obj\Debug\net10.0\Sho
 C:\Users\kybes\OneDrive\Desktop\KBShopApp\ShopManager.Core\obj\Debug\net10.0\refint\ShopManager.Core.dll
 C:\Users\kybes\OneDrive\Desktop\KBShopApp\ShopManager.Core\obj\Debug\net10.0\ShopManager.Core.pdb
 C:\Users\kybes\OneDrive\Desktop\KBShopApp\ShopManager.Core\obj\Debug\net10.0\ref\ShopManager.Core.dll
+C:\Users\kybes\OneDrive\Desktop\KBShopApp\ShopManager.Core\obj\Debug\net10.0\ShopManager.Core.sourcelink.json
