@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="ShopManager.Core/ShopManager.Core.csproj" />
+  <Project Path="ShopManager.UI/ShopManager.UI.csproj" />
+</Solution>
