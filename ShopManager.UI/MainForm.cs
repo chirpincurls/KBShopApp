@@ -9,6 +9,7 @@ namespace ShopManager.UI
         private ToolStrip toolStrip;
         private ToolStripButton btnWIP;
         private ToolStripButton btnStart;
+        private ToolStripButton btnOrder;
         private DataGridView gridWIP;
 
         public MainForm()
@@ -33,6 +34,22 @@ namespace ShopManager.UI
             // Note: You can assign actual icons here later using Properties.Resources
             btnWIP.Image = SystemIcons.Application.ToBitmap(); 
             
+            // Button: Order Form
+            btnOrder = new ToolStripButton("Order Form");
+            btnOrder.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
+            btnOrder.Image = SystemIcons.Application.ToBitmap();
+            btnOrder.Click += (s, e) => 
+            {
+                this.Controls.Remove(gridWIP);
+                var form = new OrderForm();
+                form.TopLevel = false;
+                form.FormBorderStyle = FormBorderStyle.None;
+                form.Dock = DockStyle.Fill;
+                this.Controls.Add(form);
+                toolStrip.BringToFront();
+                form.Show();
+            };
+
             // Button: Start
             btnStart = new ToolStripButton("Start");
             btnStart.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
@@ -53,6 +70,7 @@ namespace ShopManager.UI
             };
 
             toolStrip.Items.Add(btnWIP);
+            toolStrip.Items.Add(btnOrder);
             toolStrip.Items.Add(new ToolStripSeparator());
             toolStrip.Items.Add(btnStart);
 

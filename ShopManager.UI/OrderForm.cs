@@ -31,7 +31,11 @@ namespace ShopManager.UI
             pnlMenu.BackColor = SystemColors.ControlLight;
 
             var btnLabor = CreateMenuButton("Labor");
+            btnLabor.Click += (s, e) => new LaborForm().ShowDialog();
+
             var btnParts = CreateMenuButton("Parts");
+            btnParts.Click += (s, e) => new PartsForm().ShowDialog();
+
             var btnNotes = CreateMenuButton("Notes");
             var btnCanned = CreateMenuButton("Canned Jobs");
 
