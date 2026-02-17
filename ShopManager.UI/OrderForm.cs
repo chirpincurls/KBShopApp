@@ -11,6 +11,7 @@ namespace ShopManager.UI
         private Label lblLaborTotalVal;
         private Label lblTaxVal;
         private Label lblGrandTotalVal;
+        private ContextMenuStrip ctxMenu;
 
         public OrderForm()
         {
@@ -31,13 +32,94 @@ namespace ShopManager.UI
             pnlMenu.BackColor = SystemColors.ControlLight;
 
             var btnLabor = CreateMenuButton("Labor");
-            btnLabor.Click += (s, e) => new LaborForm().ShowDialog();
+            btnLabor.Click += (s, e) => 
+            {
+                var form = new LaborForm();
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    gridItems.Rows.Add(
+                        form.txtHours.Text,
+                        form.txtWorkPerformed.Text,
+                        form.txtHours.Text,
+                        "", 
+                        form.txtTotal.Text,
+                        "", 
+                        "LABOR",
+                        "0.00",
+                        form.txtTotal.Text
+                    );
+                    UpdateTotals();
+                }
+            };
 
             var btnParts = CreateMenuButton("Parts");
-            btnParts.Click += (s, e) => new PartsForm().ShowDialog();
+            btnParts.Click += (s, e) => 
+            {
+                var form = new PartsForm();
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    decimal.TryParse(form.txtQuantity.Text, out decimal qty);
+                    decimal.TryParse(form.txtUnitRetail.Text, out decimal price);
+                    decimal total = qty * price;
+
+                    gridItems.Rows.Add(
+                        "",
+                        form.txtDescription.Text,
+                        form.txtQuantity.Text,
+                        form.txtUnitRetail.Text,
+                        total.ToString("F2"),
+                        "",
+                        form.txtPartNo.Text,
+                        form.txtUnitCost.Text,
+                        total.ToString("F2")
+                    );
+                    UpdateTotals();
+                }
+            };
 
             var btnNotes = CreateMenuButton("Notes");
             var btnCanned = CreateMenuButton("Canned Jobs");
+            btnCanned.Click += (s, e) => 
+            {
+                var form = new CannedJobsForm();
+                if (form.ShowDialog() == DialogResult.OK && form.SelectedItems != null)
+                {
+                    foreach (var item in form.SelectedItems)
+                    {
+                        decimal total = item.Quantity * item.Price;
+                        
+                        if (item.IsLabor)
+                        {
+                            gridItems.Rows.Add(
+                                item.Quantity.ToString("F1"),
+                                item.Description,
+                                item.Quantity.ToString("F1"),
+                                "", 
+                                total.ToString("F2"),
+                                "", 
+                                "LABOR",
+                                "0.00",
+                                total.ToString("F2")
+                            );
+                        }
+                        else
+                        {
+                            gridItems.Rows.Add(
+                                "",
+                                item.Description,
+                                item.Quantity.ToString("F1"),
+                                item.Price.ToString("F2"),
+                                total.ToString("F2"),
+                                "",
+                                item.PartNo,
+                                item.Cost.ToString("F2"),
+                                total.ToString("F2")
+                            );
+                        }
+                    }
+                    UpdateTotals();
+                }
+            };
 
             pnlMenu.Controls.AddRange(new Control[] { btnLabor, btnParts, btnNotes, btnCanned });
 
@@ -80,6 +162,17 @@ namespace ShopManager.UI
             gridItems.BorderStyle = BorderStyle.None;
             gridItems.RowHeadersVisible = false;
             gridItems.AllowUserToAddRows = true;
+            gridItems.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+
+            // Context Menu & Events
+            ctxMenu = new ContextMenuStrip();
+            var btnDeleteRow = new ToolStripMenuItem("Delete");
+            btnDeleteRow.Click += (s, e) => DeleteSelectedRows();
+            ctxMenu.Items.Add(btnDeleteRow);
+            gridItems.ContextMenuStrip = ctxMenu;
+
+            gridItems.KeyDown += (s, e) => { if (e.KeyCode == Keys.Delete) DeleteSelectedRows(); };
+            gridItems.CellDoubleClick += (s, e) => { if (e.RowIndex >= 0) EditRow(gridItems.Rows[e.RowIndex]); };
 
             // Columns: Time, Description, Quantity, Sale, Extended, Rate, Part No, Cost, Price
             gridItems.Columns.Add("Time", "Time");
@@ -107,6 +200,94 @@ namespace ShopManager.UI
                 Height = 40, 
                 Margin = new Padding(5) 
             };
+        }
+
+        private void UpdateTotals()
+        {
+            decimal parts = 0;
+            decimal labor = 0;
+
+            foreach (DataGridViewRow row in gridItems.Rows)
+            {
+                if (row.IsNewRow) continue;
+
+                var partNo = row.Cells["PartNo"].Value?.ToString();
+                decimal.TryParse(row.Cells["Extended"].Value?.ToString(), out decimal amount);
+
+                if (partNo == "LABOR")
+                    labor += amount;
+                else
+                    parts += amount;
+            }
+
+            lblPartsTotalVal.Text = parts.ToString("C");
+            lblLaborTotalVal.Text = labor.ToString("C");
+            lblGrandTotalVal.Text = (parts + labor).ToString("C");
+        }
+
+        private void DeleteSelectedRows()
+        {
+            if (gridItems.SelectedRows.Count > 0)
+            {
+                foreach (DataGridViewRow row in gridItems.SelectedRows)
+                {
+                    if (!row.IsNewRow)
+                    {
+                        gridItems.Rows.Remove(row);
+                    }
+                }
+                UpdateTotals();
+            }
+        }
+
+        private void EditRow(DataGridViewRow row)
+        {
+            if (row.IsNewRow) return;
+
+            string partNo = row.Cells["PartNo"].Value?.ToString();
+
+            if (partNo == "LABOR")
+            {
+                var form = new LaborForm();
+                form.txtHours.Text = row.Cells["Time"].Value?.ToString();
+                form.txtWorkPerformed.Text = row.Cells["Description"].Value?.ToString();
+                form.txtTotal.Text = row.Cells["Extended"].Value?.ToString();
+                
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    row.Cells["Time"].Value = form.txtHours.Text;
+                    row.Cells["Description"].Value = form.txtWorkPerformed.Text;
+                    row.Cells["Quantity"].Value = form.txtHours.Text;
+                    row.Cells["Extended"].Value = form.txtTotal.Text;
+                    row.Cells["Price"].Value = form.txtTotal.Text;
+                    UpdateTotals();
+                }
+            }
+            else
+            {
+                var form = new PartsForm();
+                form.txtPartNo.Text = row.Cells["PartNo"].Value?.ToString();
+                form.txtDescription.Text = row.Cells["Description"].Value?.ToString();
+                form.txtQuantity.Text = row.Cells["Quantity"].Value?.ToString();
+                form.txtUnitRetail.Text = row.Cells["Sale"].Value?.ToString();
+                form.txtUnitCost.Text = row.Cells["Cost"].Value?.ToString();
+
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    decimal.TryParse(form.txtQuantity.Text, out decimal qty);
+                    decimal.TryParse(form.txtUnitRetail.Text, out decimal price);
+                    decimal total = qty * price;
+
+                    row.Cells["PartNo"].Value = form.txtPartNo.Text;
+                    row.Cells["Description"].Value = form.txtDescription.Text;
+                    row.Cells["Quantity"].Value = form.txtQuantity.Text;
+                    row.Cells["Sale"].Value = form.txtUnitRetail.Text;
+                    row.Cells["Cost"].Value = form.txtUnitCost.Text;
+                    row.Cells["Extended"].Value = total.ToString("F2");
+                    row.Cells["Price"].Value = total.ToString("F2");
+                    UpdateTotals();
+                }
+            }
         }
     }
 }
